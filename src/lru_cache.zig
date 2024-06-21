@@ -2,6 +2,8 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const linked_list = @import("./linked_list.zig");
 const LinkedList = linked_list.LinkedList;
+const hash_map = @import("./hash_map.zig");
+const HashMap = hash_map.HashMap;
 
 /// Error definition for LRUCache
 pub const LRUCacheError = error{NoElementFound};
@@ -12,6 +14,7 @@ pub const LRUCache = struct {
     count: usize = 0,
     capacity: usize,
     linkedList: *TypedLinkedList,
+    hashMap: *TypedHashMap,
 
     const Self = @This();
     const Pair = struct {
@@ -21,15 +24,22 @@ pub const LRUCache = struct {
     const TypedLinkedList = LinkedList(Pair);
     const Node = TypedLinkedList.Node;
 
+    const TypedHashMap = HashMap(i32, *Node);
+
     /// Create the LRU Cache
     pub fn init(allocator: Allocator, capacity: usize) !Self {
         const list = try allocator.create(TypedLinkedList);
         list.* = TypedLinkedList.init();
+
+        const map = try allocator.create(TypedHashMap);
+        map.* = try TypedHashMap.init(allocator);
+
         return Self{
             .allocator = allocator,
             .count = 0,
             .capacity = capacity,
             .linkedList = list,
+            .hashMap = map,
         };
     }
 
@@ -42,20 +52,15 @@ pub const LRUCache = struct {
             self.allocator.destroy(cur);
         }
         self.allocator.destroy(self.linkedList);
+
+        self.hashMap.deinit();
+        self.allocator.destroy(self.hashMap);
     }
 
     /// Returns a value of key exists on the cache
     /// If key is found on the cache, set the key-value pair to the top priority
     pub fn get(self: *LRUCache, key: i32) LRUCacheError!i32 {
-        var found_node: ?*Node = null;
-        var current = self.linkedList.head;
-        while (current) |cur| {
-            if (cur.value.key == key) {
-                found_node = cur;
-                break;
-            }
-            current = cur.next;
-        }
+        const found_node: ?*Node = self.hashMap.get(key);
 
         if (found_node) |found| {
             self.linkedList.detach(found);
@@ -69,15 +74,7 @@ pub const LRUCache = struct {
     /// Add the key-value pair to the cache
     /// If the key is already exists, update the value
     pub fn put(self: *LRUCache, key: i32, value: i32) !void {
-        var found_node: ?*Node = null;
-        var current = self.linkedList.head;
-        while (current) |cur| {
-            if (cur.value.key == key) {
-                found_node = cur;
-                break;
-            }
-            current = cur.next;
-        }
+        const found_node = self.hashMap.get(key);
 
         if (found_node) |found| {
             found.value.value = value;
@@ -90,8 +87,10 @@ pub const LRUCache = struct {
             };
 
             self.linkedList.addFirst(node);
+            try self.hashMap.put(key, node);
             if (self.count + 1 > self.capacity) {
                 const tail = self.linkedList.tail.?;
+                _ = self.hashMap.remove(tail.value.key);
                 self.linkedList.detach(tail);
                 self.allocator.destroy(tail);
             } else {

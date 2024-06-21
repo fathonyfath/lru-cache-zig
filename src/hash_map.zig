@@ -19,7 +19,7 @@ pub fn HashMap(comptime K: type, comptime V: type) type {
         const Node = TypedLinkedList.Node;
 
         const Self = @This();
-        const defaultStorageSize = 1;
+        const defaultStorageSize = 10000;
 
         pub fn init(allocator: Allocator) !Self {
             const array = try allocator.alloc(TypedLinkedList, defaultStorageSize);
