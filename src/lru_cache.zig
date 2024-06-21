@@ -13,8 +13,8 @@ pub const LRUCache = struct {
     allocator: Allocator,
     count: usize = 0,
     capacity: usize,
-    linkedList: *TypedLinkedList,
-    hashMap: *TypedHashMap,
+    linkedList: TypedLinkedList,
+    hashMap: TypedHashMap,
 
     const Self = @This();
     const Pair = struct {
@@ -28,18 +28,12 @@ pub const LRUCache = struct {
 
     /// Create the LRU Cache
     pub fn init(allocator: Allocator, capacity: usize) !Self {
-        const list = try allocator.create(TypedLinkedList);
-        list.* = TypedLinkedList.init();
-
-        const map = try allocator.create(TypedHashMap);
-        map.* = try TypedHashMap.init(allocator);
-
         return Self{
             .allocator = allocator,
             .count = 0,
             .capacity = capacity,
-            .linkedList = list,
-            .hashMap = map,
+            .linkedList = TypedLinkedList.init(),
+            .hashMap = try TypedHashMap.init(allocator),
         };
     }
 
@@ -51,10 +45,8 @@ pub const LRUCache = struct {
             current = cur.next;
             self.allocator.destroy(cur);
         }
-        self.allocator.destroy(self.linkedList);
 
         self.hashMap.deinit();
-        self.allocator.destroy(self.hashMap);
     }
 
     /// Returns a value of key exists on the cache
