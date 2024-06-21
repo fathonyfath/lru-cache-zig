@@ -1,5 +1,7 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
+const linked_list = @import("./linked_list.zig");
+const LinkedList = linked_list.LinkedList;
 
 /// Error definition for LRUCache
 pub const LRUCacheError = error{NoElementFound};

@@ -38,6 +38,13 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+
+    registerTest(b, test_step, .{
+        .name = "linked_list",
+        .root_source_file = b.path("src/linked_list.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
 }
 
 fn registerTest(b: *std.Build, test_step: *std.Build.Step, options: std.Build.TestOptions) void {
