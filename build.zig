@@ -45,6 +45,13 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+
+    registerTest(b, test_step, .{
+        .name = "hash_map",
+        .root_source_file = b.path("src/hash_map.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
 }
 
 fn registerTest(b: *std.Build, test_step: *std.Build.Step, options: std.Build.TestOptions) void {
